@@ -118,7 +118,7 @@ function CE({ dragKey, off, onDrag, hov, setHov, style={}, children }) {
 /* ─────────────────── CANVAS TEMPLATES ─────────────────── */
 function ProgettiCanvas({ p, off, onDrag, hov, setHov }) {
   const tc = p.fields.colorMode==='brown' ? BR : RD;
-  const iF = p.fields.colorMode==='brown' ? 'sepia(1) saturate(1.8) hue-rotate(345deg) brightness(.52)' : 'none';
+  const iF = p.fields.colorMode==='brown' ? 'sepia(1) saturate(1.8) hue-rotate(345deg) brightness(.52)' : 'brightness(0) saturate(100%) invert(24%) sepia(97%) saturate(700%) hue-rotate(333deg) brightness(105%)';
   const drag = {off,onDrag,hov,setHov};
   return (<>
     <CE dragKey="header" {...drag} style={{left:64,top:68,display:'flex',alignItems:'center',gap:'12px'}}>
@@ -177,7 +177,7 @@ function StoryCanvas({ p, off, onDrag, hov, setHov }) {
 
 function EthosCanvas({ p, off, onDrag, hov, setHov }) {
   const tc = p.fields.colorMode==='brown' ? BR : RD;
-  const iF = p.fields.colorMode==='brown' ? 'sepia(1) saturate(1.8) hue-rotate(345deg) brightness(.52)' : 'none';
+  const iF = p.fields.colorMode==='brown' ? 'sepia(1) saturate(1.8) hue-rotate(345deg) brightness(.52)' : 'brightness(0) saturate(100%) invert(24%) sepia(97%) saturate(700%) hue-rotate(333deg) brightness(105%)';
   const drag = {off,onDrag,hov,setHov};
   return (<>
     <CE dragKey="header" {...drag} style={{left:64,top:68,display:'flex',alignItems:'center',gap:'12px'}}>
@@ -368,6 +368,8 @@ function Creator({ post: init, onSave, onBack }) {
   const [hov,  setHov]  = useState(null);
   const [sc,   setSc]   = useState(.46);
   const [topic,  setTopic]  = useState('');
+  const [selEl,  setSelEl]  = useState(null); // selected element for typography
+  const [typo,   setTypo]   = useState(()=>init?.typo||{}); // {elementKey: {fontSize, fontWeight, lineHeight}}
   const [aiOn,   setAiOn]   = useState(false);
   const [exping, setExping] = useState(false);
   const [saved,  setSaved]  = useState(false);
@@ -416,7 +418,7 @@ function Creator({ post: init, onSave, onBack }) {
   };
 
   const doSave=(status=post.status)=>{
-    onSave({...post,off,status,updatedAt:new Date().toISOString()});
+    onSave({...post,off,typo,status,updatedAt:new Date().toISOString()});
     setSaved(true); setTimeout(()=>setSaved(false),1800);
   };
 
@@ -442,7 +444,9 @@ function Creator({ post: init, onSave, onBack }) {
     inp:   { width:'100%',padding:'6px 8px',fontFamily:'Manrope,sans-serif',fontSize:'11px',color:'#1c100a',background:CR,border:`1.5px solid ${BD}`,borderRadius:'3px',outline:'none',boxSizing:'border-box' },
     ta:    { width:'100%',padding:'6px 8px',fontFamily:'Manrope,sans-serif',fontSize:'11px',color:'#1c100a',background:CR,border:`1.5px solid ${BD}`,borderRadius:'3px',outline:'none',resize:'vertical',minHeight:'56px',boxSizing:'border-box' },
   };
-  const cprops = {off,onDrag:startDrag,hov,setHov};
+  const cprops = {off,onDrag:startDrag,hov,setHov,selEl,onSelect:setSelEl,typo};
+  const selTypo = selEl ? (typo[selEl]||{}) : null;
+  const updTypo = (k,v) => setTypo(t=>({...t,[selEl]:{...(t[selEl]||{}),[k]:v}}));
 
   return (
     <div style={{flex:1,display:'flex',overflow:'hidden'}}>
@@ -478,6 +482,42 @@ function Creator({ post: init, onSave, onBack }) {
               {aiOn?'Generando…':'Genera contenuto'}
             </button>
           </div>
+
+          {/* ── TYPOGRAPHY PANEL ── */}
+          {selEl && (
+            <div style={{padding:'11px 15px', borderBottom:'1px solid #f0e8e0', background:'#fffaf7'}}>
+              <span style={{display:'block',fontSize:'8px',fontWeight:600,letterSpacing:'0.18em',textTransform:'uppercase',color:RD,marginBottom:'8px'}}>
+                ✎ Tipografia — {selEl}
+              </span>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px',marginBottom:'8px'}}>
+                <div>
+                  <label style={{display:'block',fontSize:'8px',fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'#8c7a6a',marginBottom:'3px'}}>Dimensione</label>
+                  <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                    <button onClick={()=>updTypo('fontSize',Math.max(8,(selTypo.fontSize||56)-4))} style={{width:'26px',height:'26px',background:'none',border:'1.5px solid #e0d8cd',borderRadius:'3px',cursor:'pointer',fontSize:'14px',color:'#513a2a',fontFamily:'Manrope,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>−</button>
+                    <span style={{flex:1,textAlign:'center',fontSize:'11px',fontWeight:700,color:'#513a2a'}}>{selTypo.fontSize ? selTypo.fontSize+'px' : 'auto'}</span>
+                    <button onClick={()=>updTypo('fontSize',(selTypo.fontSize||56)+4)} style={{width:'26px',height:'26px',background:'none',border:'1.5px solid #e0d8cd',borderRadius:'3px',cursor:'pointer',fontSize:'14px',color:'#513a2a',fontFamily:'Manrope,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
+                  </div>
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'8px',fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'#8c7a6a',marginBottom:'3px'}}>Interlinea</label>
+                  <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                    <button onClick={()=>updTypo('lineHeight',+(Math.max(0.7,parseFloat((selTypo.lineHeight||1))-0.05).toFixed(2)))} style={{width:'26px',height:'26px',background:'none',border:'1.5px solid #e0d8cd',borderRadius:'3px',cursor:'pointer',fontSize:'14px',color:'#513a2a',fontFamily:'Manrope,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>−</button>
+                    <span style={{flex:1,textAlign:'center',fontSize:'11px',fontWeight:700,color:'#513a2a'}}>{parseFloat(selTypo.lineHeight||1).toFixed(2)}</span>
+                    <button onClick={()=>updTypo('lineHeight',+(parseFloat((selTypo.lineHeight||1))+0.05).toFixed(2))} style={{width:'26px',height:'26px',background:'none',border:'1.5px solid #e0d8cd',borderRadius:'3px',cursor:'pointer',fontSize:'14px',color:'#513a2a',fontFamily:'Manrope,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
+                  </div>
+                </div>
+              </div>
+              <div style={{marginBottom:'8px'}}>
+                <label style={{display:'block',fontSize:'8px',fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'#8c7a6a',marginBottom:'4px'}}>Peso carattere</label>
+                <div style={{display:'flex',gap:'3px'}}>
+                  {[['Thin','300'],['Regular','400'],['Semi','600'],['Bold','800']].map(([l,w])=>(
+                    <button key={w} onClick={()=>updTypo('fontWeight',parseInt(w))} style={{flex:1,padding:'5px 2px',borderRadius:'3px',cursor:'pointer',fontFamily:'Manrope,sans-serif',fontSize:'8px',fontWeight:parseInt(w),border:(selTypo.fontWeight||0)===parseInt(w)?'none':'1.5px solid #e0d8cd',background:(selTypo.fontWeight||0)===parseInt(w)?BR:'white',color:(selTypo.fontWeight||0)===parseInt(w)?'white':'#8c7a6a'}}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={()=>{setTypo(t=>{const n={...t};delete n[selEl];return n;});}} style={{width:'100%',padding:'4px',background:'none',border:'1px solid #e0d8cd',borderRadius:'3px',fontSize:'8px',cursor:'pointer',color:'#c4b9aa',fontFamily:'Manrope,sans-serif'}}>↺ Reset elemento</button>
+            </div>
+          )}
 
           {/* Fields */}
           <div style={S.sect}>
